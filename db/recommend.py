@@ -1,23 +1,72 @@
-import openai
+from typing import Callable
 from sqlalchemy import func, select
+import openai
+
 from db.database import SessionLocal
 from db.models import Movie, MovieEmbeddingOpenAI
+from enum import Enum
+from sqlalchemy.sql import ColumnElement
 
-EMBEDDING_MODELS = {
-    "text-embedding-ada-002": MovieEmbeddingOpenAI.embedding_ada_002,
-    "text-embedding-3-small": MovieEmbeddingOpenAI.embedding_3_small,
-    "text-embedding-3-large": MovieEmbeddingOpenAI.embedding_3_large,
-}
+from sqlalchemy.orm import Mapped
+from pgvector.sqlalchemy import VECTOR  # type: ignore
 
 
-def calculate_score_metric(
-    embedding: list[float],
-    include_vote_count: bool = True,
-    embedding_model: str = "text-embedding-3-large",
-):
-    """Calculate the score metric based on the embedding and vote count."""
-    distance_expr = EMBEDDING_MODELS[embedding_model].l2_distance(embedding)
-    similarity_score = 1 - distance_expr
+class EmbeddingModel(Enum):
+    ADA_002 = ("text-embedding-ada-002", MovieEmbeddingOpenAI.embedding_ada_002)
+    SMALL_3 = ("text-embedding-3-small", MovieEmbeddingOpenAI.embedding_3_small)
+    LARGE_3 = ("text-embedding-3-large", MovieEmbeddingOpenAI.embedding_3_large)
+
+    def __init__(self, model_name: str, db_column: Mapped[VECTOR]) -> None:
+        self.model_name = model_name
+        self.db_column = db_column
+
+
+def score_v1(embedding: list[float], embedding_model: EmbeddingModel) -> ColumnElement[float]:
+    """
+    Return cosine similarity score: 1 - cosine distance
+    between the query embedding and stored movie embeddings.
+
+    Equation:
+        score_metric =
+        1 - cosine_distance
+    """
+    similarity = embedding_model.db_column.cosine_distance(embedding)  # type: ignore
+    score_metric = 1 - similarity
+
+    return score_metric  # pyrefly: ignore
+
+
+def score_v2(embedding: list[float], embedding_model: EmbeddingModel) -> ColumnElement[float]:
+    """
+    Compute weighted score combining cosine similarity, vote average, and log vote count.
+
+    Equation:
+        score_metric =
+        0.8 * (1 - cosine_distance)
+        + 0.2 * (vote_average / 10)
+        + 0.1 * log(1 + vote_count)
+    """
+    similarity = embedding_model.db_column.cosine_distance(embedding)  # type: ignore
+    similarity_score = 1 - similarity
+
+    score_metric = 0.8 * similarity_score + 0.2 * (Movie.vote_average / 10.0) + 0.1 * func.log(1 + Movie.vote_count)
+
+    return score_metric
+
+
+def score_v3(embedding: list[float], embedding_model: EmbeddingModel) -> ColumnElement[float]:
+    """
+    Compute weighted score using L2 similarity, capped log vote count, and vote average.
+    Use least to cap the maximum log vote count to 10.
+
+    Equation:
+        score_metric =
+        0.9 * (1 - cosine_distance)
+        + 0.07 * (vote_average / 10)
+        + 0.03 * least(10, log(1 + vote_count))
+    """
+    similarity = embedding_model.db_column.cosine_distance(embedding)  # type: ignore
+    similarity_score = 1 - similarity
 
     score_metric = (
         0.9 * similarity_score
@@ -28,24 +77,36 @@ def calculate_score_metric(
     return score_metric
 
 
+class ScoreMetricVersion(Enum):
+    V1 = ("v1", score_v1)
+    V2 = ("v2", score_v2)
+    V3 = ("v3", score_v3)
+
+    def __init__(self, version: str, score_function: Callable) -> None:
+        self.version = version
+        self.score_function = score_function
+
+
+EMBEDDING_MODEL = EmbeddingModel.LARGE_3
+SCORE_METRIC_VERSION = ScoreMetricVersion.V3
+
+
 def get_recommendations(
     prompt: str,
     page: int = 1,
     per_page: int = 10,
-    embedding_model: str = "text-embedding-3-large",
+    embedding_model: EmbeddingModel = EMBEDDING_MODEL,
+    score_metric_version: ScoreMetricVersion = SCORE_METRIC_VERSION,
 ) -> list[Movie]:
+    """Get movie recommendations based on user prompt using embeddings."""
     offset = (page - 1) * per_page
 
     # Step 1: Embed the user prompt
-    response = openai.embeddings.create(input=prompt, model=embedding_model)
+    response = openai.embeddings.create(input=prompt, model=embedding_model.model_name)
 
     embedding: list[float] = response.data[0].embedding
 
-    score_metric = calculate_score_metric(
-        embedding,
-        include_vote_count=True,
-        embedding_model=embedding_model,
-    )
+    score_metric = score_metric_version.score_function(embedding, embedding_model)
 
     stmt = (
         select(Movie)
@@ -53,7 +114,7 @@ def get_recommendations(
             MovieEmbeddingOpenAI,
             Movie.movie_id == MovieEmbeddingOpenAI.movie_id,
         )
-        .order_by(score_metric.desc())
+        .order_by(score_metric.desc())  # pyrefly: ignore
         .offset(offset)
         .limit(per_page)
     )
@@ -69,8 +130,6 @@ def get_recommendations(
         raise e
     finally:
         session.close()
-
-    return []
 
 
 def get_movie_by_id(movie_id: int) -> Movie | None:
@@ -89,27 +148,23 @@ def get_movie_by_id(movie_id: int) -> Movie | None:
 
 def get_similar_movies(
     movie_id: int,
-    limit: int = 10,
-    embedding_model: str = "text-embedding-3-large",
+    page: int = 1,
+    per_page: int = 10,
+    embedding_model: EmbeddingModel = EMBEDDING_MODEL,
+    score_metric_version: ScoreMetricVersion = SCORE_METRIC_VERSION,
 ) -> list[Movie]:
     """Get movies similar to the given movie based on embeddings."""
+    offset = (page - 1) * per_page
     session = SessionLocal()
     try:
         # First, get the embedding of the target movie
-        target_stmt = select(EMBEDDING_MODELS[embedding_model]).where(
-            MovieEmbeddingOpenAI.movie_id == movie_id
-        )
+        target_stmt = select(embedding_model.db_column).where(MovieEmbeddingOpenAI.movie_id == movie_id)
         target_embedding = session.execute(target_stmt).scalar_one_or_none()
 
         if target_embedding is None:
             return []
 
-        # Find similar movies using embedding similarity
-        score_metric = calculate_score_metric(
-            target_embedding,
-            include_vote_count=False,
-            embedding_model=embedding_model,
-        )
+        score_metric = score_metric_version.score_function(target_embedding, embedding_model)
 
         stmt = (
             select(Movie)
@@ -118,8 +173,9 @@ def get_similar_movies(
                 Movie.movie_id == MovieEmbeddingOpenAI.movie_id,
             )
             .where(Movie.movie_id != movie_id)  # Exclude the original movie
-            .order_by(score_metric.desc())
-            .limit(limit)
+            .order_by(score_metric.desc())  # pyrefly: ignore
+            .offset(offset)
+            .limit(per_page)
         )
 
         results = session.execute(stmt).scalars().all()
@@ -130,5 +186,3 @@ def get_similar_movies(
         raise e
     finally:
         session.close()
-
-    return []
