@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎬 Movie Recommender</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen px-6 py-8">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-4xl font-bold mb-6 text-center">🎬 Movie Recommender</h1>
+
+        <!-- Prompt form -->
+        <form method="post" class="mb-8 flex flex-col sm:flex-row gap-4">
+            <input type="text" name="prompt" value="{{ prompt }}"
+                placeholder="Describe what you want to watch (e.g. superhero action)..."
+                class="flex-1 p-4 text-black rounded" required />
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded text-white font-semibold">
+                Recommend
+            </button>
+        </form>
+
+        {% if movies %}
+        <h2 class="text-2xl font-semibold mb-4">Results for: <span class="text-yellow-300">{{ prompt }}</span></h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+            {% for movie in movies %}
+            <a href="/movie/{{ movie.movie_id }}" class="block">
+                <div class="bg-gray-800 p-4 rounded shadow-lg hover:scale-105 transition cursor-pointer hover:bg-gray-700">
+                    <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }}"
+                        class="rounded mb-2 w-full h-64 object-cover"
+                        onerror="this.onerror=null;this.src='https://picsum.photos/500/750';">
+                    <h3 class="text-lg font-semibold">{{ movie.english_title}}</h3>
+                    <p class="text-sm text-gray-400">
+                        ⭐ {{ movie.vote_average }} ({{ movie.vote_count }} votes)
+                    </p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% elif prompt %}
+        <p class="mt-8 text-center text-gray-400 text-lg">😔 No results found for your prompt.</p>
+        {% endif %}
+    </div>
+</body>
+
+</html>
