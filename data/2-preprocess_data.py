@@ -87,9 +87,12 @@ def preprocess_data(df: pl.DataFrame) -> pl.DataFrame:
             pl.col("runtime"),
             pl.col("overview"),
             pl.col("genres"),
-            pl.col("keywords"),  # untouched
+            pl.col("keywords"),
             pl.col("vote_average"),
             pl.col("vote_count"),
+            pl.lit(None).alias("poster_path"),
+            pl.lit(None).alias("backdrop_path"),
+            pl.lit(None).alias("updated_at"),  # Placeholder for future updates
         ]
     )
 
@@ -113,6 +116,8 @@ def main() -> None:
     preprocessed_data_path = "data/preprocessed/tmdb_5000_movies.csv"
 
     schema_overrides = {
+        "vote_average": pl.Float32,
+        "vote_count": pl.Int64,
         "runtime": pl.Float32,
     }
 
