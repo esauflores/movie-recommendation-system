@@ -1,0 +1,15 @@
+aiohttp>=3.12.13
+boto3>=1.38.44
+fastapi[all]>=0.115.13
+kagglehub>=0.3.12
+mlflow>=3.1.1
+numpy>=2.3.1
+openai>=1.91.0
+pgvector>=0.4.1
+polars>=1.31.0
+psycopg2-binary>=2.9.10
+python-dotenv>=1.1.1
+requests>=2.32.0
+sqlalchemy>=1.4,<2.0
+types-aiofiles>=24.1.0.20250606
+types-requests>=2.32.4.20250611

@@ -1,4 +1,4 @@
-from db.database import Base
+from database import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, Float, ForeignKey, DateTime
 from pgvector.sqlalchemy import VECTOR  # type: ignore
