@@ -21,16 +21,12 @@ class RateLimiter:
         now = time.time()
 
         # Remove requests older than 1 minute
-        self.requests = [
-            req_time for req_time in self.requests if now - req_time < 60
-        ]
+        self.requests = [req_time for req_time in self.requests if now - req_time < 60]
 
         # If we're at the limit, wait
         if len(self.requests) >= self.max_requests:
             sleep_time = 60 - (now - self.requests[0]) + 0.1  # Add small buffer
-            print(
-                f"Rate limit reached, sleeping for {sleep_time:.1f} seconds..."
-            )
+            print(f"Rate limit reached, sleeping for {sleep_time:.1f} seconds...")
             await asyncio.sleep(sleep_time)
             return await self.acquire()
 
@@ -54,9 +50,7 @@ async def fetch_movie_data(
 
         try:
             timeout = aiohttp.ClientTimeout(total=10)  # type: ignore
-            async with session.get(
-                url, params=params, timeout=timeout
-            ) as response:
+            async with session.get(url, params=params, timeout=timeout) as response:
                 response.raise_for_status()
                 movie_data = await response.json()
                 return movie, movie_data
@@ -100,16 +94,11 @@ async def update_movie_poster_data_async(session: Session) -> None:
         batch_size = 50
         for batch_start in range(0, len(movies), batch_size):
             batch_movies = movies[batch_start : batch_start + batch_size]
-            print(
-                f"Processing batch {batch_start // batch_size + 1}/{(len(movies) + batch_size - 1) // batch_size}"
-            )
+            print(f"Processing batch {batch_start // batch_size + 1}/{(len(movies) + batch_size - 1) // batch_size}")
 
             # Create tasks for concurrent requests
             tasks = [
-                fetch_movie_data(
-                    http_session, movie, semaphore, rate_limiter, tmdb_api_key
-                )
-                for movie in batch_movies
+                fetch_movie_data(http_session, movie, semaphore, rate_limiter, tmdb_api_key) for movie in batch_movies
             ]
 
             # Execute all tasks concurrently
@@ -131,9 +120,7 @@ async def update_movie_poster_data_async(session: Session) -> None:
             # Commit batch updates
             try:
                 session.commit()
-                print(
-                    f"Updated {updated_count}/{len(batch_movies)} movies in this batch"
-                )
+                print(f"Updated {updated_count}/{len(batch_movies)} movies in this batch")
             except Exception as e:
                 print(f"Error committing batch: {e}")
                 session.rollback()

@@ -8,9 +8,7 @@ def download_dataset(force_download: bool = True) -> str:
     Downloads the latest version of the TMDB movie metadata dataset.
     Returns the path to the downloaded dataset files.
     """
-    path: str = kagglehub.dataset_download(
-        "tmdb/tmdb-movie-metadata", force_download=force_download
-    )
+    path: str = kagglehub.dataset_download("tmdb/tmdb-movie-metadata", force_download=force_download)
     print("Path to dataset files:", path)
     return path
 

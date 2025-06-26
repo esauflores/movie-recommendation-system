@@ -1,5 +1,5 @@
 from db.database import engine, Base
-import db.models  # noqa: F401
+import db.models  # noqa
 
 
 def init_db() -> None:

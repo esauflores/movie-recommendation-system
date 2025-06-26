@@ -3,9 +3,7 @@ import polars as pl
 from typing import Optional
 
 
-def read_raw_data(
-    file_path: str, schema_overrides: Optional[dict] = None
-) -> pl.DataFrame:
+def read_raw_data(file_path: str, schema_overrides: Optional[dict] = None) -> pl.DataFrame:
     """
     Reads the raw movie data from a CSV file.
 
@@ -43,9 +41,7 @@ def preprocess_data(df: pl.DataFrame) -> pl.DataFrame:
         renamed columns.
     """
     # Filter for released movies with non-null overview
-    filtered_df = df.filter(
-        (pl.col("status") == "Released") & (pl.col("overview").is_not_null())
-    )
+    filtered_df = df.filter((pl.col("status") == "Released") & (pl.col("overview").is_not_null()))
 
     # Parse genres JSON strings and extract 'name' fields
     filtered_df = filtered_df.with_columns(
@@ -53,20 +49,12 @@ def preprocess_data(df: pl.DataFrame) -> pl.DataFrame:
             pl.col("genres")
             .str.json_decode()
             .cast(
-                pl.List(
-                    pl.Struct(
-                        [pl.Field("id", pl.Int64), pl.Field("name", pl.Utf8)]
-                    )
-                ),
+                pl.List(pl.Struct([pl.Field("id", pl.Int64), pl.Field("name", pl.Utf8)])),
                 strict=False,
             )
             .list.eval(pl.element().struct.field("name"))
             .map_elements(
-                lambda x: json.dumps(
-                    x.to_list() if hasattr(x, "to_list") else x
-                )
-                if x is not None
-                else "[]",
+                lambda x: json.dumps(x.to_list() if hasattr(x, "to_list") else x) if x is not None else "[]",
                 return_dtype=pl.Utf8,
             )
             .alias("genres")
@@ -79,20 +67,12 @@ def preprocess_data(df: pl.DataFrame) -> pl.DataFrame:
             pl.col("keywords")
             .str.json_decode()
             .cast(
-                pl.List(
-                    pl.Struct(
-                        [pl.Field("id", pl.Int64), pl.Field("name", pl.Utf8)]
-                    )
-                ),
+                pl.List(pl.Struct([pl.Field("id", pl.Int64), pl.Field("name", pl.Utf8)])),
                 strict=False,
             )
             .list.eval(pl.element().struct.field("name"))
             .map_elements(
-                lambda x: json.dumps(
-                    x.to_list() if hasattr(x, "to_list") else x
-                )
-                if x is not None
-                else "[]",
+                lambda x: json.dumps(x.to_list() if hasattr(x, "to_list") else x) if x is not None else "[]",
                 return_dtype=pl.Utf8,
             )
             .alias("keywords")

@@ -29,9 +29,7 @@ def get_database_session() -> tuple[Engine, sessionmaker[Session]]:
     if not all([db_host, db_port, db_name, db_user, db_pass]):
         raise ValueError("Database connection env vars are not fully set.")
 
-    database_url = (
-        f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-    )
+    database_url = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
 
     # Create engine
     engine = create_engine(database_url)

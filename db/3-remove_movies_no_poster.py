@@ -29,17 +29,13 @@ def remove_movies_without_poster(session: Session, batch_size: int = 50):
 
         for movie in batch:
             # Remove movie embeddings
-            session.query(MovieEmbeddingOpenAI).filter(
-                MovieEmbeddingOpenAI.movie_id == movie.movie_id
-            ).delete()
+            session.query(MovieEmbeddingOpenAI).filter(MovieEmbeddingOpenAI.movie_id == movie.movie_id).delete()
 
             # Remove movie
             session.delete(movie)
 
         session.commit()
-        print(
-            f"Removed batch {i // batch_size + 1} of {len(movies_without_poster) // batch_size + 1}"
-        )
+        print(f"Removed batch {i // batch_size + 1} of {len(movies_without_poster) // batch_size + 1}")
 
 
 def remove_movies_without_backdrop(session: Session, batch_size: int = 50):
@@ -67,17 +63,13 @@ def remove_movies_without_backdrop(session: Session, batch_size: int = 50):
 
         for movie in batch:
             # Remove movie embeddings
-            session.query(MovieEmbeddingOpenAI).filter(
-                MovieEmbeddingOpenAI.movie_id == movie.movie_id
-            ).delete()
+            session.query(MovieEmbeddingOpenAI).filter(MovieEmbeddingOpenAI.movie_id == movie.movie_id).delete()
 
             # Remove movie
             session.delete(movie)
 
         session.commit()
-        print(
-            f"Removed batch {i // batch_size + 1} of {len(movies_without_backdrop) // batch_size + 1}"
-        )
+        print(f"Removed batch {i // batch_size + 1} of {len(movies_without_backdrop) // batch_size + 1}")
 
 
 def main() -> None:

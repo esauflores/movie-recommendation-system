@@ -24,14 +24,14 @@
 
         {% if movies %}
         <h2 class="text-2xl font-semibold mb-4">Results for: <span class="text-yellow-300">{{ prompt }}</span></h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+        <div id="movies-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
             {% for movie in movies %}
             <a href="/movie/{{ movie.movie_id }}" class="block">
                 <div class="bg-gray-800 p-4 rounded shadow-lg hover:scale-105 transition cursor-pointer hover:bg-gray-700">
                     <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }}"
                         class="rounded mb-2 w-full h-64 object-cover"
                         onerror="this.onerror=null;this.src='https://picsum.photos/500/750';">
-                    <h3 class="text-lg font-semibold">{{ movie.english_title}}</h3>
+                    <h3 class="text-lg font-semibold h-14 flex items-start">{{ movie.english_title}}</h3>
                     <p class="text-sm text-gray-400">
                         ⭐ {{ movie.vote_average }} ({{ movie.vote_count }} votes)
                     </p>
@@ -39,10 +39,90 @@
             </a>
             {% endfor %}
         </div>
+        
+        <!-- See More Button -->
+        <div class="text-center mt-8">
+            <button id="see-more-btn" onclick="loadMoreMovies()" 
+                    class="bg-yellow-600 hover:bg-yellow-700 px-8 py-3 rounded-lg text-white font-semibold transition duration-200 hover:scale-105">
+                🎬 See More Movies
+            </button>
+            <div id="loading" class="hidden mt-4">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+                <p class="text-gray-400 mt-2">Loading more recommendations...</p>
+            </div>
+        </div>
         {% elif prompt %}
         <p class="mt-8 text-center text-gray-400 text-lg">😔 No results found for your prompt.</p>
         {% endif %}
     </div>
+
+    <script>
+        let currentPage = 1;
+        const currentPrompt = "{{ prompt }}";
+
+        async function loadMoreMovies() {
+            if (!currentPrompt) return;
+            
+            const seeMoreBtn = document.getElementById('see-more-btn');
+            const loading = document.getElementById('loading');
+            const moviesGrid = document.getElementById('movies-grid');
+            
+            // Show loading state
+            seeMoreBtn.style.display = 'none';
+            loading.classList.remove('hidden');
+            
+            try {
+                currentPage++;
+                const response = await fetch(`/api/recommendations?prompt=${encodeURIComponent(currentPrompt)}&page=${currentPage}`);
+                const data = await response.json();
+                
+                if (data.movies && data.movies.length > 0) {
+                    // Add new movies to the grid
+                    data.movies.forEach(movie => {
+                        const movieElement = createMovieElement(movie);
+                        moviesGrid.appendChild(movieElement);
+                    });
+                    
+                    // Show the button again for next page
+                    seeMoreBtn.style.display = 'inline-block';
+                } else {
+                    // No more results, hide the button
+                    seeMoreBtn.style.display = 'none';
+                    const noMoreResults = document.createElement('p');
+                    noMoreResults.className = 'text-center text-gray-400 mt-4';
+                    noMoreResults.textContent = '🎬 No more recommendations available';
+                    document.querySelector('.text-center.mt-8').appendChild(noMoreResults);
+                }
+            } catch (error) {
+                console.error('Error loading more movies:', error);
+                seeMoreBtn.textContent = 'Error loading movies - Try again';
+                seeMoreBtn.style.display = 'inline-block';
+            }
+            
+            // Hide loading state
+            loading.classList.add('hidden');
+        }
+
+        function createMovieElement(movie) {
+            const movieLink = document.createElement('a');
+            movieLink.href = `/movie/${movie.movie_id}`;
+            movieLink.className = 'block';
+            
+            movieLink.innerHTML = `
+                <div class="bg-gray-800 p-4 rounded shadow-lg hover:scale-105 transition cursor-pointer hover:bg-gray-700">
+                    <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.english_title}"
+                        class="rounded mb-2 w-full h-64 object-cover"
+                        onerror="this.onerror=null;this.src='https://picsum.photos/500/750';">
+                    <h3 class="text-lg font-semibold h-14 flex items-start">${movie.english_title}</h3>
+                    <p class="text-sm text-gray-400">
+                        ⭐ ${movie.vote_average} (${movie.vote_count} votes)
+                    </p>
+                </div>
+            `;
+            
+            return movieLink;
+        }
+    </script>
 </body>
 
 </html>

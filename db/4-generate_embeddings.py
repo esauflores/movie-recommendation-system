@@ -72,15 +72,9 @@ def save_embeddings_to_db(batch: List[Movie], embedding_results: dict) -> None:
     try:
         for j, movie in enumerate(batch):
             try:
-                embedding_ada_002 = (
-                    embedding_results["ada_002"].data[j].embedding
-                )
-                embedding_3_small = (
-                    embedding_results["3_small"].data[j].embedding
-                )
-                embedding_3_large = (
-                    embedding_results["3_large"].data[j].embedding
-                )
+                embedding_ada_002 = embedding_results["ada_002"].data[j].embedding
+                embedding_3_small = embedding_results["3_small"].data[j].embedding
+                embedding_3_large = embedding_results["3_large"].data[j].embedding
 
                 new_embedding = MovieEmbeddingOpenAI(
                     movie_id=movie.movie_id,
@@ -91,9 +85,7 @@ def save_embeddings_to_db(batch: List[Movie], embedding_results: dict) -> None:
 
                 session.add(new_embedding)
             except Exception as e:
-                print(
-                    f"Error processing embeddings for movie {movie.english_title}: {e}"
-                )
+                print(f"Error processing embeddings for movie {movie.english_title}: {e}")
                 raise e
 
         session.commit()
@@ -135,21 +127,15 @@ def generate_missing_embeddings(batch_size: int = 50, max_workers: int = 3):
 
     # Split movies into batches
     batches = [
-        movies_without_embeddings[i : i + batch_size]
-        for i in range(0, len(movies_without_embeddings), batch_size)
+        movies_without_embeddings[i : i + batch_size] for i in range(0, len(movies_without_embeddings), batch_size)
     ]
 
-    print(
-        f"Processing {len(batches)} batches with up to {max_workers} concurrent batches..."
-    )
+    print(f"Processing {len(batches)} batches with up to {max_workers} concurrent batches...")
 
     # Process batches concurrently
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit all batch processing tasks
-        future_to_batch = {
-            executor.submit(generate_embeddings_for_batch, batch): i
-            for i, batch in enumerate(batches)
-        }
+        future_to_batch = {executor.submit(generate_embeddings_for_batch, batch): i for i, batch in enumerate(batches)}
 
         # Process completed batches and save to database
         for future in as_completed(future_to_batch):
@@ -160,9 +146,7 @@ def generate_missing_embeddings(batch_size: int = 50, max_workers: int = 3):
                 # Save to database (each batch gets its own session to avoid concurrency issues)
                 save_embeddings_to_db(batch, embedding_results)
 
-                print(
-                    f"✅ Completed batch {batch_index + 1}/{len(batches)} ({len(batch)} movies)"
-                )
+                print(f"✅ Completed batch {batch_index + 1}/{len(batches)} ({len(batch)} movies)")
 
             except Exception as e:
                 print(f"❌ Error processing batch {batch_index + 1}: {e}")
