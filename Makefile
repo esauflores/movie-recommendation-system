@@ -33,6 +33,13 @@ help:
 	@echo "  logs                 - Show recent logs"
 	@echo "  status               - Check the status of the pipeline"
 
+setup-hooks: ## Install pre-commit hooks
+	uv run pre-commit install
+	@echo "Pre-commit hooks installed!"
+
+pre-commit: ## Run pre-commit on all files
+	uv run pre-commit run --all-files
+
 # Setup environment
 setup:
 	@echo "🔧 Setting up environment..."
@@ -79,7 +86,7 @@ run-experiments: generate-embeddings
 	$(PYTHON) mlflow_experiments/exp_openai.py
 
 # Preprocessing data pipeline
-preprocess-data-pipeline: setup load-data preprocess-data	
+preprocess-data-pipeline: setup load-data preprocess-data
 	@echo "✅ Preprocessing data pipeline completed!"
 	@echo "Run 'make db-data-pipeline;' to continue the full pipeline"
 	@echor "Or run 'make full-data-pipeline' to start again the full pipeline"
