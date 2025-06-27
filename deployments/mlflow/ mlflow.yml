@@ -1,0 +1,30 @@
+services:
+  mlflow-db:
+    restart: always
+    image: mysql/mysql-server:latest
+    container_name: mlflow-db
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mlflow-data:/var/lib/mysql
+
+  mlflow:
+    restart: always
+    build: .
+    image: mlflow_server
+    container_name: mlflow_server
+    depends_on:
+      - minio-init
+      - mlflow-db
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT_URL}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    command: mlflow server --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mlflow-db:3306/${MYSQL_DATABASE} --default-artifact-root ${MLFLOW_ARTIFACT_ROOT} --host 0.0.0.0
