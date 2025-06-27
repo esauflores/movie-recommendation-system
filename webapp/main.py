@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+
+# from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from db.recommend import (
@@ -13,7 +14,7 @@ from db.recommend import (
 
 app = FastAPI()
 templates = Jinja2Templates(directory="webapp/templates")
-app.mount("/static", StaticFiles(directory="webapp/static"), name="static")
+# app.mount("/static", StaticFiles(directory="webapp/static"), name="static")
 
 
 EMBEDDING_MODEL = EmbeddingModel.LARGE_3
