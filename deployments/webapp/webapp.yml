@@ -1,6 +1,8 @@
 services:
   webapp:
-    build: ./deployments/webapp
+    build:
+      context: ../../
+      dockerfile: deployments/webapp/Dockerfile
     container_name: movie-webapp
     restart: unless-stopped
     ports:
