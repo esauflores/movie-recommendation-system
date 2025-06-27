@@ -18,9 +18,6 @@ services:
     build: .
     image: mlflow_server
     container_name: mlflow_server
-    depends_on:
-      - minio-init
-      - mlflow-db
     ports:
       - "5000:5000"
     environment:
