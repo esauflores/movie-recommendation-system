@@ -1,9 +1,9 @@
 import json
+
 import polars as pl
-from typing import Optional
 
 
-def read_raw_data(file_path: str, schema_overrides: Optional[dict] = None) -> pl.DataFrame:
+def read_raw_data(file_path: str, schema_overrides: dict | None = None) -> pl.DataFrame:
     """
     Reads the raw movie data from a CSV file.
 

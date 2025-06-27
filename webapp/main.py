@@ -1,15 +1,15 @@
-from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
 from db.recommend import (
-    get_recommendations,
-    get_movie_by_id,
-    get_similar_movies,
     EmbeddingModel,
     ScoreMetricVersion,
-)  # your logic here
-
+    get_movie_by_id,
+    get_recommendations,
+    get_similar_movies,
+)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="webapp/templates")
@@ -21,12 +21,12 @@ SCORE_METRIC_VERSION = ScoreMetricVersion.V3
 
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
+async def home(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("index.html", {"request": request, "movies": [], "prompt": ""})
 
 
 @app.post("/", response_class=HTMLResponse)
-async def recommend(request: Request, prompt: str = Form(...)):
+async def recommend(request: Request, prompt: str = Form(...)) -> HTMLResponse:
     movies = get_recommendations(
         prompt,
         page=1,
@@ -38,7 +38,7 @@ async def recommend(request: Request, prompt: str = Form(...)):
 
 
 @app.get("/movie/{movie_id}", response_class=HTMLResponse)
-async def movie_detail(request: Request, movie_id: int):
+async def movie_detail(request: Request, movie_id: int) -> HTMLResponse:
     # Get the specific movie
     movie = get_movie_by_id(movie_id)
     if not movie:
@@ -60,7 +60,7 @@ async def movie_detail(request: Request, movie_id: int):
 
 
 @app.get("/api/recommendations", response_class=JSONResponse)
-async def load_more_recommendations(prompt: str, page: int = 2):
+async def load_more_recommendations(prompt: str, page: int = 2) -> JSONResponse:
     """API endpoint to load more recommendations via AJAX"""
     movies = get_recommendations(
         prompt,

@@ -1,11 +1,12 @@
-from dotenv import load_dotenv
 import asyncio
-import aiohttp
 import os
 import time
-from typing import List, Any
 from datetime import datetime, timedelta
+from typing import Any
+
+import aiohttp
 import polars as pl
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -15,9 +16,9 @@ class RateLimiter:
 
     def __init__(self, max_requests_per_minute: int = 40):
         self.max_requests = max_requests_per_minute
-        self.requests: List[float] = []
+        self.requests: list[float] = []
 
-    async def acquire(self):
+    async def acquire(self) -> None:
         """Acquire a slot for making a request."""
         now = time.time()
 

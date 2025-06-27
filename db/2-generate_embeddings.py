@@ -1,14 +1,16 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import openai
 from dotenv import load_dotenv
+from openai.types import CreateEmbeddingResponse
+
 from db.database import SessionLocal
 from db.models import Movie, MovieEmbeddingOpenAI
-import openai
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Tuple
 
 
 def generate_embeddings_for_batch(
-    batch: List[Movie],
-) -> Tuple[List[Movie], dict]:
+    batch: list[Movie],
+) -> tuple[list[Movie], dict]:
     """
     Generate embeddings for a single batch of movies using concurrent API calls.
     """
@@ -24,19 +26,19 @@ def generate_embeddings_for_batch(
     ]
 
     # Define the embedding tasks
-    def get_ada_002_embeddings():
+    def get_ada_002_embeddings() -> CreateEmbeddingResponse:
         return openai.embeddings.create(
             input=prompts,
             model="text-embedding-ada-002",
         )
 
-    def get_3_small_embeddings():
+    def get_3_small_embeddings() -> CreateEmbeddingResponse:
         return openai.embeddings.create(
             input=prompts,
             model="text-embedding-3-small",
         )
 
-    def get_3_large_embeddings():
+    def get_3_large_embeddings() -> CreateEmbeddingResponse:
         return openai.embeddings.create(
             input=prompts,
             model="text-embedding-3-large",
@@ -62,7 +64,7 @@ def generate_embeddings_for_batch(
     return batch, results
 
 
-def save_embeddings_to_db(batch: List[Movie], embedding_results: dict) -> None:
+def save_embeddings_to_db(batch: list[Movie], embedding_results: dict) -> None:
     """
     Save the generated embeddings to the database using a new session.
     """
@@ -96,7 +98,7 @@ def save_embeddings_to_db(batch: List[Movie], embedding_results: dict) -> None:
         session.close()
 
 
-def generate_missing_embeddings(batch_size: int = 50, max_workers: int = 3):
+def generate_missing_embeddings(batch_size: int = 50, max_workers: int = 3) -> None:
     """
     Finds movies that don't have embeddings and generates embeddings for them using concurrent processing.
     """

@@ -1,14 +1,16 @@
-from builtins import dict
-import openai
 import json
-from db.recommend import get_recommendations, EmbeddingModel, ScoreMetricVersion
-from experiments.openai_models import OpenAIModel
-from db.models import Movie
-from dotenv import load_dotenv
-import mlflow
-from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from typing import Any
+
+import mlflow
+import openai
+from dotenv import load_dotenv
+
+from db.models import Movie
+from db.recommend import EmbeddingModel, ScoreMetricVersion, get_recommendations
+from experiments.openai_models import OpenAIModel
 
 load_dotenv()
 
@@ -61,7 +63,7 @@ def create_judge_prompt(user_prompt: str, movies: list[Movie]) -> str:
     """
 
 
-def call_llm_judge(prompt_text: str, judge_model=GPT_MODEL) -> dict:
+def call_llm_judge(prompt_text: str, judge_model: OpenAIModel = GPT_MODEL) -> dict[str, Any]:
     try:
         client = openai.OpenAI()
 
@@ -72,7 +74,8 @@ def call_llm_judge(prompt_text: str, judge_model=GPT_MODEL) -> dict:
                     "role": "developer",
                     "content": (
                         "You are a seasoned movie recommendation expert."
-                        "Your job is to understand nuanced preferences and provide highly relevant, engaging movie suggestions "
+                        "Your job is to understand nuanced preferences and provide highly relevant"
+                        "engaging movie suggestions"
                         "You consider genre, tone, themes, cast, and storytelling style when making recommendations."
                     ),
                 },
@@ -85,11 +88,18 @@ def call_llm_judge(prompt_text: str, judge_model=GPT_MODEL) -> dict:
         )
 
         content = completion.choices[0].message.content
+
         if content is None:
             print("⚠️ OpenAI returned empty response")
             return {}
 
-        return json.loads(content.strip())
+        parsed_content = json.loads(content.strip())
+
+        if not isinstance(parsed_content, dict):
+            print("⚠️ OpenAI response is not in a valid Response format")
+            return {}
+
+        return parsed_content
 
     except Exception as e:
         print("⚠️ Failed to parse LLM response:", e)
@@ -129,7 +139,10 @@ def evaluate_embedding_score(
         return {}
 
 
-def run_embedding_score_experiment_all(judge_model: OpenAIModel = GPT_MODEL, prompt_evaluation_set: int = 10):
+def run_embedding_score_experiment_all(
+    judge_model: OpenAIModel = GPT_MODEL,
+    prompt_evaluation_set: int = 10,
+) -> None:
     """Run experiments for all combinations of embedding models and score metrics."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -205,13 +218,13 @@ def run_embedding_score_experiment_all(judge_model: OpenAIModel = GPT_MODEL, pro
                         metric_counter = 0
 
                         for metric, value in evaluation.items():
-                            if isinstance(value, (int, float)):
+                            if isinstance(value, int) or isinstance(value, float):
                                 mlflow.log_metric(metric, value)
                                 metrics[metric].append(value)
 
                                 prompt_average += value
                                 metric_counter += 1
-                            else:
+                            elif isinstance(value, str):  # type: ignore
                                 mlflow.log_text(
                                     json.dumps(value, indent=2),
                                     f"{metric}_{embedding_model.name}_{score_version.name}_{prompt_name}.json",
@@ -245,7 +258,7 @@ def run_embedding_score_experiment_all(judge_model: OpenAIModel = GPT_MODEL, pro
                     print(f"✅ Logged overall average: {overall_average}")
 
 
-def main():
+def main() -> None:
     print("Running OpenAI embedding score evaluation experiment...")
     run_embedding_score_experiment_all(judge_model=GPT_MODEL, prompt_evaluation_set=5)
     run_embedding_score_experiment_all(judge_model=GPT_MODEL, prompt_evaluation_set=10)

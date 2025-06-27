@@ -1,5 +1,6 @@
-from dotenv import load_dotenv
 import polars as pl
+from dotenv import load_dotenv
+
 from db.database import SessionLocal
 from db.models import Movie
 

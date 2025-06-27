@@ -1,9 +1,10 @@
+import openai
 from dotenv import load_dotenv
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+
 from db.database import SessionLocal
 from db.models import Movie, MovieEmbeddingOpenAI
-import openai
 
 
 def recommend_movies(
@@ -22,20 +23,14 @@ def recommend_movies(
 
     # 2. Create the distance expression
     # The <=> operator returns cosine distance (0 = identical, 2 = opposite)
-    distance_expr = MovieEmbeddingOpenAI.embedding_ada_002.l2_distance(
-        query_embedding
-    )
+    distance_expr = MovieEmbeddingOpenAI.embedding_ada_002.l2_distance(query_embedding)
 
     # Convert distance to similarity (1 - distance/2 for cosine distance)
     # Or simply use (1 - distance) if your distance is already normalized
     similarity_score = 1 - distance_expr
 
     # 3. Create combined scoring expression
-    combined_score = (
-        0.7 * similarity_score
-        + 0.2 * (Movie.vote_average / 10.0)
-        + 0.1 * func.log(1 + Movie.vote_count)
-    )
+    combined_score = 0.7 * similarity_score + 0.2 * (Movie.vote_average / 10.0) + 0.1 * func.log(1 + Movie.vote_count)
 
     # 2. Query top-k closest movies by similarity (using cosine distance)
     stmt = (

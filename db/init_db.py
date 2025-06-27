@@ -1,5 +1,5 @@
-from db.database import engine, Base
 import db.models  # noqa
+from db.database import Base, engine
 
 
 def init_db() -> None:

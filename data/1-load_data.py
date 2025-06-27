@@ -1,6 +1,7 @@
-import kagglehub  # type: ignore
 import os
 import shutil
+
+import kagglehub  # type: ignore
 
 
 def download_dataset(force_download: bool = True) -> str:

@@ -39,10 +39,10 @@
             </a>
             {% endfor %}
         </div>
-        
+
         <!-- See More Button -->
         <div class="text-center mt-8">
-            <button id="see-more-btn" onclick="loadMoreMovies()" 
+            <button id="see-more-btn" onclick="loadMoreMovies()"
                     class="bg-yellow-600 hover:bg-yellow-700 px-8 py-3 rounded-lg text-white font-semibold transition duration-200 hover:scale-105">
                 🎬 See More Movies
             </button>
@@ -62,27 +62,27 @@
 
         async function loadMoreMovies() {
             if (!currentPrompt) return;
-            
+
             const seeMoreBtn = document.getElementById('see-more-btn');
             const loading = document.getElementById('loading');
             const moviesGrid = document.getElementById('movies-grid');
-            
+
             // Show loading state
             seeMoreBtn.style.display = 'none';
             loading.classList.remove('hidden');
-            
+
             try {
                 currentPage++;
                 const response = await fetch(`/api/recommendations?prompt=${encodeURIComponent(currentPrompt)}&page=${currentPage}`);
                 const data = await response.json();
-                
+
                 if (data.movies && data.movies.length > 0) {
                     // Add new movies to the grid
                     data.movies.forEach(movie => {
                         const movieElement = createMovieElement(movie);
                         moviesGrid.appendChild(movieElement);
                     });
-                    
+
                     // Show the button again for next page
                     seeMoreBtn.style.display = 'inline-block';
                 } else {
@@ -98,7 +98,7 @@
                 seeMoreBtn.textContent = 'Error loading movies - Try again';
                 seeMoreBtn.style.display = 'inline-block';
             }
-            
+
             // Hide loading state
             loading.classList.add('hidden');
         }
@@ -107,7 +107,7 @@
             const movieLink = document.createElement('a');
             movieLink.href = `/movie/${movie.movie_id}`;
             movieLink.className = 'block';
-            
+
             movieLink.innerHTML = `
                 <div class="bg-gray-800 p-4 rounded shadow-lg hover:scale-105 transition cursor-pointer hover:bg-gray-700">
                     <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.english_title}"
@@ -119,7 +119,7 @@
                     </p>
                 </div>
             `;
-            
+
             return movieLink;
         }
     </script>

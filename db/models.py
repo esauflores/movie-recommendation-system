@@ -1,8 +1,10 @@
-from db.database import Base
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String, Float, ForeignKey, DateTime
-from pgvector.sqlalchemy import VECTOR  # type: ignore
 from datetime import datetime
+
+from pgvector.sqlalchemy import VECTOR
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from db.database import Base
 
 
 class Movie(Base):

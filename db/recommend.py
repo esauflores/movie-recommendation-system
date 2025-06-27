@@ -1,14 +1,14 @@
-from typing import Callable
-from sqlalchemy import func, select
+from collections.abc import Callable
+from enum import Enum
+
 import openai
+from pgvector.sqlalchemy import VECTOR
+from sqlalchemy import func, select
+from sqlalchemy.orm import Mapped
+from sqlalchemy.sql import ColumnElement
 
 from db.database import SessionLocal
 from db.models import Movie, MovieEmbeddingOpenAI
-from enum import Enum
-from sqlalchemy.sql import ColumnElement
-
-from sqlalchemy.orm import Mapped
-from pgvector.sqlalchemy import VECTOR  # type: ignore
 
 
 class EmbeddingModel(Enum):
@@ -33,7 +33,7 @@ def score_v1(embedding: list[float], embedding_model: EmbeddingModel) -> ColumnE
     similarity = embedding_model.db_column.cosine_distance(embedding)  # type: ignore
     score_metric = 1 - similarity
 
-    return score_metric  # pyrefly: ignore
+    return score_metric  # type: ignore
 
 
 def score_v2(embedding: list[float], embedding_model: EmbeddingModel) -> ColumnElement[float]:
@@ -51,7 +51,7 @@ def score_v2(embedding: list[float], embedding_model: EmbeddingModel) -> ColumnE
 
     score_metric = 0.8 * similarity_score + 0.2 * (Movie.vote_average / 10.0) + 0.1 * func.log(1 + Movie.vote_count)
 
-    return score_metric
+    return score_metric  # type: ignore
 
 
 def score_v3(embedding: list[float], embedding_model: EmbeddingModel) -> ColumnElement[float]:
@@ -74,7 +74,7 @@ def score_v3(embedding: list[float], embedding_model: EmbeddingModel) -> ColumnE
         + 0.03 * func.least(10, func.log(1 + Movie.vote_count))
     )
 
-    return score_metric
+    return score_metric  # type: ignore
 
 
 class ScoreMetricVersion(Enum):
@@ -138,7 +138,7 @@ def get_movie_by_id(movie_id: int) -> Movie | None:
     try:
         stmt = select(Movie).where(Movie.movie_id == movie_id)
         result = session.execute(stmt).scalar_one_or_none()
-        return result
+        return result  # type: ignore
     except Exception as e:
         session.rollback()
         raise e
