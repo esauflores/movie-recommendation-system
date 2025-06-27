@@ -15,7 +15,7 @@ services:
 
   mlflow:
     restart: always
-    build: .
+    build: ./deployments/mlflow
     image: mlflow_server
     container_name: mlflow_server
     ports:
