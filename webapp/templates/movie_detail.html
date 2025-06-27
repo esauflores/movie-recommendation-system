@@ -10,26 +10,26 @@
 
 <body class="bg-gray-900 text-white min-h-screen">
     <!-- Hero section with backdrop -->
-    <div class="relative h-96 bg-cover bg-center bg-gray-800" 
+    <div class="relative h-96 bg-cover bg-center bg-gray-800"
          style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://image.tmdb.org/t/p/original{{ movie.backdrop_path }}');">
         <div class="absolute inset-0 flex items-center">
             <div class="max-w-6xl mx-auto px-6 w-full">
                 <div class="flex flex-col md:flex-row items-center gap-8">
                     <!-- Movie Poster -->
                     <div class="flex-shrink-0">
-                        <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" 
+                        <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}"
                              alt="{{ movie.english_title }}"
                              class="w-64 h-96 object-cover rounded-lg shadow-xl"
                              onerror="this.onerror=null;this.src='https://picsum.photos/500/750';">
                     </div>
-                    
+
                     <!-- Movie Info -->
                     <div class="flex-1">
                         <h1 class="text-4xl md:text-5xl font-bold mb-4">{{ movie.english_title }}</h1>
                         {% if movie.original_title and movie.original_title != movie.english_title %}
                         <p class="text-xl text-gray-300 mb-4">{{ movie.original_title }}</p>
                         {% endif %}
-                        
+
                         <div class="flex items-center gap-6 mb-6">
                             <div class="flex items-center">
                                 <span class="text-yellow-400 text-2xl">⭐</span>
@@ -37,11 +37,11 @@
                                 <span class="text-gray-400 ml-2">({{ movie.vote_count }} votes)</span>
                             </div>
                         </div>
-                        
+
                         {% if movie.overview %}
                         <p class="text-lg text-gray-200 leading-relaxed mb-6">{{ movie.overview }}</p>
                         {% endif %}
-                        
+
                         <a href="/" class="inline-block bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition">
                             ← Back to Search
                         </a>
@@ -54,7 +54,7 @@
     <!-- Additional Details -->
     <div class="max-w-6xl mx-auto px-6 py-12">
         <h2 class="text-2xl font-bold mb-6">Movie Details</h2>
-        
+
         <div class="grid md:grid-cols-2 gap-8">
             <div class="bg-gray-800 p-6 rounded-lg">
                 <h3 class="text-xl font-semibold mb-4">Information</h3>
@@ -65,28 +65,28 @@
                         <span>{{ movie.runtime }} minutes</span>
                     </div>
                     {% endif %}
-                    
+
                     {% if movie.genres %}
                     <div class="flex justify-between">
                         <span class="text-gray-400">Genres:</span>
                         <span>{{ movie.genres|replace('[', '')|replace(']', '')}}</span>
                     </div>
                     {% endif %}
-                    
+
                     {% if movie.keywords %}
                     <div class="flex justify-between">
                         <span class="text-gray-400">Keywords:</span>
                         <span class="text-right">{{ movie.keywords|replace('[', '')|replace(']', '')}}</span>
                     </div>
                     {% endif %}
-                    
+
                     <div class="flex justify-between">
                         <span class="text-gray-400">Movie ID:</span>
                         <span>{{ movie.movie_id }}</span>
                     </div>
                 </div>
             </div>
-            
+
             <div class="bg-gray-800 p-6 rounded-lg">
                 <h3 class="text-xl font-semibold mb-4">Ratings & Popularity</h3>
                 <div class="space-y-3">
@@ -94,12 +94,12 @@
                         <span class="text-gray-400">Average Rating:</span>
                         <span>{{ "%.2f"|format(movie.vote_average) }}/10</span>
                     </div>
-                    
+
                     <div class="flex justify-between">
                         <span class="text-gray-400">Total Votes:</span>
                         <span>{{ "{:,}".format(movie.vote_count) }}</span>
                     </div>
-                    
+
                     <!-- Rating visualization -->
                     <div class="mt-4">
                         <div class="flex justify-between text-sm text-gray-400 mb-1">
@@ -113,7 +113,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Similar Movies Section -->
         {% if similar_movies %}
         <div class="mt-12">
@@ -122,7 +122,7 @@
                 {% for similar_movie in similar_movies %}
                 <a href="/movie/{{ similar_movie.movie_id }}" class="block">
                     <div class="bg-gray-800 p-4 rounded-lg hover:scale-105 transition shadow-lg hover:shadow-xl">
-                        <img src="https://image.tmdb.org/t/p/w400{{ similar_movie.poster_path }}" 
+                        <img src="https://image.tmdb.org/t/p/w400{{ similar_movie.poster_path }}"
                              alt="{{ similar_movie.english_title }}"
                              class="w-full h-64 object-cover rounded-lg mb-3"
                              onerror="this.onerror=null;this.src='https://picsum.photos/400/600';">
