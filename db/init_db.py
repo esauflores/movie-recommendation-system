@@ -7,5 +7,11 @@ def init_db() -> None:
     print("Database tables created.")
 
 
+def delete_db() -> None:
+    Base.metadata.drop_all(engine)
+    print("Database tables deleted.")
+
+
 if __name__ == "__main__":
+    # delete_db()
     init_db()
