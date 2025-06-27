@@ -10,11 +10,20 @@ PREPROCESSED_CSV = "data/preprocessed/tmdb_5000_movies.csv"
 def load_movies_to_db(csv_path: str = PREPROCESSED_CSV) -> None:
     df = pl.read_csv(csv_path)
     session = SessionLocal()
+    counter = 0
     try:
         for row in df.iter_rows(named=True):
             # if overview is None, or poster_path is None, or backdrop_path is None, skip
             if not row.get("overview") or not row.get("poster_path") or not row.get("backdrop_path"):
                 continue
+
+            if counter > 500:
+                break
+
+            if counter % 100 == 0:
+                print(f"Processing batch {counter // 100 + 1}...")
+
+            counter += 1
 
             movie = Movie(
                 movie_id=row["movie_id"],
