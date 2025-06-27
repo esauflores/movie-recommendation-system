@@ -105,17 +105,16 @@ def generate_missing_embeddings(batch_size: int = 50, max_workers: int = 3):
 
     try:
         # Find movies without embeddings
-        # movies_without_embeddings = (
-        #     session.query(Movie)
-        #     .outerjoin(
-        #         MovieEmbeddingOpenAI,
-        #         Movie.movie_id == MovieEmbeddingOpenAI.movie_id,
-        #     )
-        #     .filter(MovieEmbeddingOpenAI.movie_id.is_(None))
-        #     .all()
-        # )
+        movies_without_embeddings = (
+            session.query(Movie)
+            .outerjoin(
+                MovieEmbeddingOpenAI,
+                Movie.movie_id == MovieEmbeddingOpenAI.movie_id,
+            )
+            .filter(MovieEmbeddingOpenAI.movie_id.is_(None))
+            .all()
+        )
 
-        movies_without_embeddings = session.query(Movie).all()
     finally:
         session.close()
 

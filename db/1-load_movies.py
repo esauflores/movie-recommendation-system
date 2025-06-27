@@ -11,6 +11,10 @@ def load_movies_to_db(csv_path: str = PREPROCESSED_CSV) -> None:
     session = SessionLocal()
     try:
         for row in df.iter_rows(named=True):
+            # if overview is None, or poster_path is None, or backdrop_path is None, skip
+            if not row.get("overview") or not row.get("poster_path") or not row.get("backdrop_path"):
+                continue
+
             movie = Movie(
                 movie_id=row["movie_id"],
                 english_title=row["english_title"],
@@ -21,6 +25,8 @@ def load_movies_to_db(csv_path: str = PREPROCESSED_CSV) -> None:
                 keywords=row.get("keywords"),
                 vote_average=row.get("vote_average"),
                 vote_count=row.get("vote_count"),
+                poster_path=row.get("poster_path"),
+                backdrop_path=row.get("backdrop_path"),
             )
             session.merge(movie)
         session.commit()
