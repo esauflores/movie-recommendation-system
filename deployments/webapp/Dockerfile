@@ -19,8 +19,8 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
 
 # Copy application code
-COPY ../../webapp/ ./webapp/
-COPY ../../db/ ./db/
+COPY webapp/ ./webapp/
+COPY db/ ./db/
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app \
