@@ -1,56 +1,87 @@
+"""
+Bulk‑load TMDB 5000 movie metadata into PostgreSQL with SQLAlchemy + Polars.
+
+✓  Uses session.bulk_insert_mappings   → one INSERT per batch, no SELECTs.
+✓  Skips rows missing overview / poster / backdrop.
+✓  Prints progress every batch.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+from pathlib import Path
+
 import polars as pl
 from dotenv import load_dotenv
 
-from db.database import SessionLocal
-from db.models import Movie
+from db.database import SessionLocal  # your existing sessionmaker
+from db.models import Movie  # SQLAlchemy declarative model
 
-PREPROCESSED_CSV = "data/preprocessed/tmdb_5000_movies.csv"
+PREPROCESSED_CSV = Path("data/preprocessed/tmdb_5000_movies.csv")
+BATCH_SIZE = 1_000
 
 
-def load_movies_to_db(csv_path: str = PREPROCESSED_CSV) -> None:
+def _rows_to_mappings(rows: Iterable[dict]) -> list[dict]:
+    """
+    Convert Polars row dicts → SQLAlchemy mapping dicts.
+    We keep only the model’s column names.
+    """
+    keep = {
+        "movie_id",
+        "english_title",
+        "original_title",
+        "runtime",
+        "overview",
+        "genres",
+        "keywords",
+        "vote_average",
+        "vote_count",
+        "poster_path",
+        "backdrop_path",
+    }
+    return [{k: v for k, v in row.items() if k in keep} for row in rows]
+
+def load_movies_to_db(csv_path: Path = PREPROCESSED_CSV) -> None:
     df = pl.read_csv(csv_path)
+
+    # filter out rows without required fields
+    df = df.filter(
+        (pl.col("overview").is_not_null())
+        & (pl.col("poster_path").is_not_null())
+        & (pl.col("backdrop_path").is_not_null())
+    )
+
+    total = len(df)
+    print(f"Loading {total:,} movies …")
+
     session = SessionLocal()
-    counter = 0
+    inserted = 0
     try:
-        for row in df.iter_rows(named=True):
-            # if overview is None, or poster_path is None, or backdrop_path is None, skip
-            if not row.get("overview") or not row.get("poster_path") or not row.get("backdrop_path"):
-                continue
+        for offset in range(0, total, BATCH_SIZE):
+            batch = df[offset : offset + BATCH_SIZE].iter_rows(named=True)
+            mappings = _rows_to_mappings(batch)
 
-            if counter > 500:
-                break
+            session.bulk_insert_mappings(Movie.__mapper__, mappings, render_nulls=True)
+            inserted += len(mappings)
 
-            if counter % 100 == 0:
-                print(f"Processing batch {counter // 100 + 1}...")
-
-            counter += 1
-
-            movie = Movie(
-                movie_id=row["movie_id"],
-                english_title=row["english_title"],
-                original_title=row.get("original_title"),
-                runtime=row.get("runtime"),
-                overview=row.get("overview"),
-                genres=row.get("genres"),
-                keywords=row.get("keywords"),
-                vote_average=row.get("vote_average"),
-                vote_count=row.get("vote_count"),
-                poster_path=row.get("poster_path"),
-                backdrop_path=row.get("backdrop_path"),
+            print(
+                f"Batch {(offset // BATCH_SIZE) + 1} / {(total - 1) // BATCH_SIZE + 1} "
+                f"({inserted:,}/{total:,}) inserted"
             )
-            session.merge(movie)
+
         session.commit()
-        print(f"Loaded {len(df)} movies into the database.")
+        print(f"✅  Finished: {inserted:,} rows committed.")
     except Exception as e:
         session.rollback()
-        print(f"Error loading movies: {e}")
+        print(f"❌  Error loading movies: {e}")
+        raise
     finally:
         session.close()
 
 
 def main() -> None:
-    load_dotenv()
-    load_movies_to_db(PREPROCESSED_CSV)
+    load_dotenv()                  # loads DB creds from .env
+    load_movies_to_db()
 
 
 if __name__ == "__main__":

@@ -5,40 +5,34 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-load_dotenv()
+load_dotenv()  # Loads DATABASE_URL from .env
 
 
 class Base(DeclarativeBase):
+    """Base class for SQLAlchemy models."""
+
     pass
 
 
 def get_database_session() -> tuple[Engine, sessionmaker[Session]]:
     """
-    Loads environment variables and returns:
+    Returns:
     - SQLAlchemy engine
-    - sessionmaker
-    - declarative base
+    - sessionmaker bound to that engine
     """
 
-    db_host = os.getenv("DB_HOST")
-    db_port = os.getenv("DB_PORT")
-    db_name = os.getenv("DB_NAME")
-    db_user = os.getenv("DB_USER")
-    db_pass = os.getenv("DB_PASSWORD")
-
-    if not all([db_host, db_port, db_name, db_user, db_pass]):
-        raise ValueError("Database connection env vars are not fully set.")
-
-    database_url = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable is not set.")
 
     # Create engine
     engine = create_engine(database_url)
 
-    # Create session
+    # Create configured session factory
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-    # Base class for models
     return engine, SessionLocal
 
 
+# Usage: no stray comma this time
 engine, SessionLocal = get_database_session()
